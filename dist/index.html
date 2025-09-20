@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Tienda</title>
+    <style>
+      body{font-family:system-ui,sans-serif;margin:0;padding:24px;background:#f8fafc}
+      .wrap{max-width:960px;margin:0 auto}
+      .btn{border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Tienda desplegada 🎉</h1>
+      <p>Frontend mínimo servido desde <code>/dist/index.html</code>.</p>
+      <p><button class="btn" onclick="fetch('/api/health').then(r=>r.json()).then(d=>alert('API: '+JSON.stringify(d))).catch(e=>alert(e))">Probar API</button></p>
+    </div>
+  </body>
+</html>
