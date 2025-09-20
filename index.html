@@ -1,0 +1,26 @@
+
+<!doctype html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tienda (Render con dist)</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;padding:24px;background:#f8fafc} .wrap{max-width:1000px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.btn{border:1px solid #d1d5db;background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}.btn.p{background:#2563eb;border-color:#2563eb;color:#fff}
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.right{margin-left:auto}.muted{color:#64748b} table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e5e7eb;padding:6px;text-align:left}
+</style></head><body><div class="wrap">
+<h2>Mi Tienda</h2>
+<div class="row"><button id="seed" class="btn">Sembrar datos</button><span class="muted">|</span><button id="checkout" class="btn p">Pagar</button></div>
+<h3>Productos</h3><section id="productos" class="grid"></section>
+<h3>Carrito</h3><section id="carrito" class="panel"><div class="muted">Vacío</div></section>
+<h3>Top por cantidad</h3><section id="top" class="panel"></section>
+<script>
+const fmt=n=>new Intl.NumberFormat('es-CO').format(n); let carrito=[];
+function renderProductos(list){const el=document.getElementById('productos'); el.innerHTML=''; list.forEach(p=>{const c=document.createElement('div'); c.className='card'; c.innerHTML=\`<div><b>\${p.titulo}</b></div><div class="muted">$ \${fmt(p.precio)}</div><button class='btn p'>Agregar</button>\`; c.querySelector('button').onclick=()=>{const i=carrito.findIndex(x=>(x.id??x.titulo)===(p.id??p.titulo)); if(i>=0) carrito[i].qty++; else carrito.push({...p,qty:1}); renderCarrito();}; el.appendChild(c);});}
+function renderCarrito(){const el=document.getElementById('carrito'); if(!carrito.length){el.innerHTML='<div class="muted">Vacío</div>';return;} const tot=carrito.reduce((s,it)=>s+it.precio*it.qty,0); let html='<table><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead><tbody>'; carrito.forEach((it,idx)=>{html+=\`<tr><td>\${it.titulo}</td><td>\${it.qty}</td><td>$ \${fmt(it.precio)}</td><td>$ \${fmt(it.precio*it.qty)}</td><td><button data-i="\${idx}" class="btn">Quitar</button></td></tr>\`;}); html+='</tbody></table>'; html+=\`<div class="row"><div class="right"><b>Total: $ \${fmt(tot)}</b></div></div>\`; el.innerHTML=html; el.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{const i=parseInt(b.getAttribute('data-i')); carrito.splice(i,1); renderCarrito();});}
+async function j(url,opt){const r=await fetch(url,opt); const t=await r.text(); if(!r.ok) throw new Error(t||r.statusText); return t?JSON.parse(t):null;}
+async function cargar(){const data=await j('/api/productos'); if(!data.length) document.getElementById('productos').innerHTML='<div class="muted">Sin productos. Usa "Sembrar datos".</div>'; else renderProductos(data);}
+async function pagar(){ if(!carrito.length){alert('Agrega productos'); return;} const nombre=prompt('Tu nombre:'); const correo=prompt('Tu correo:'); if(!nombre||!correo){alert('Faltan datos'); return;} const items=carrito.map(it=>({id:it.id??null,titulo:it.titulo,precio:it.precio,qty:it.qty})); const res=await j('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,correo,items})}); carrito=[]; renderCarrito(); alert('Pedido #' + (res?.pedido_id??'?'));}
+async function top(){const data=await j('/api/ventas-top'); const el=document.getElementById('top'); if(!data.length){el.innerHTML='<div class="muted">Sin datos.</div>'; return;} let html='<table><thead><tr><th>Producto</th><th>Unid.</th><th>Ingreso</th></tr></thead><tbody>'; data.forEach(r=>{html+=\`<tr><td>\${r.titulo}</td><td>\${fmt(r.cantidad||0)}</td><td>$ \${fmt(r.ingreso||0)}</td></tr>\`;}); html+='</tbody></table>'; el.innerHTML=html;}
+document.getElementById('seed').onclick=async()=>{await j('/api/seed',{method:'POST'}); await cargar(); await top();};
+document.getElementById('checkout').onclick=pagar;
+cargar(); top();
+</script>
+</div></body></html>
