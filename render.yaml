@@ -1,7 +1,50 @@
+# render.yaml — Blueprint para Render (colócalo en la raíz del repo)
 services:
+  # --- BACKEND: Flask (Web Service) ---
   - type: web
-    name: tienda-render
-    runtime: python
+    name: mini-backend
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
+    rootDir: backend
+    env: python
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      # Si luego migras a Postgres de Render, agrega aquí DATABASE_URL
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: mini-postgres
+      #     property: connectionString
+
+  # --- FRONTEND: React (Static Site) ---
+  - type: static_site
+    name: mini-frontend
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist              # Vite build -> dist
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      # Opción A (recomendada): Render resuelve el host del backend automáticamente.
+      # Algunas cuentas ya soportan esta referencia; si no, usa la Opción B (manual).
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: mini-backend
+          property: host
+      # Nota: Si tu cuenta no soporta 'fromService', cambia a:
+      # - key: VITE_API_URL
+      #   value: https://<HOST_DEL_BACKEND>/api
+
+# (Opcional) Base de datos Postgres gratis de Render
+# databases:
+#   - name: mini-postgres
+#     databaseName: mini
+#     plan: free
