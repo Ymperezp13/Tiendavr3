@@ -300,6 +300,31 @@ def seed():
         except: pass
     return {"ok": True, "msg": "Sembrado con éxito"}
 
+# --- DEBUG / UTILIDADES ---
+
+# GET alternativo para sembrar (atajo si lo abres en el navegador)
+@app.get("/api/seed-get")
+def seed_get_alias():
+    return seed()
+
+# Conteos rápidos para verificar que hay datos en la DB
+@app.get("/api/debug-stats")
+def debug_stats():
+    with get_conn() as conn:
+        prod = conn.execute("SELECT COUNT(*) AS n FROM productos").fetchone()["n"]
+        ped  = conn.execute("SELECT COUNT(*) AS n FROM pedidos").fetchone()["n"]
+        it   = conn.execute("SELECT COUNT(*) AS n FROM pedido_items").fetchone()["n"]
+    return jsonify({"productos": prod, "pedidos": ped, "items": it})
+
+# Inserta un producto de prueba (para descartar permisos de escritura)
+@app.post("/api/debug-add-producto")
+def debug_add_producto():
+    with get_conn() as conn:
+        cur = conn.execute("INSERT INTO productos(titulo, precio) VALUES(?,?)", ("TEST-DEBUG", 12345))
+        new_id = cur.lastrowid
+        row = conn.execute("SELECT id, titulo, precio FROM productos WHERE id=?", (new_id,)).fetchone()
+        return jsonify(dict(row)), 201
+
 # --- Entrypoint ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render inyecta PORT
