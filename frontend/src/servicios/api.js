@@ -8,6 +8,12 @@ async function toJSON(res) {
   return txt ? JSON.parse(txt) : null;
 }
 
+const RAW = import.meta.env?.VITE_API_URL;
+export const API_BASE = RAW?.startsWith('http')
+  ? RAW
+  : 'https://tiendavr3-1.onrender.com/api';
+
+
 // -------- Productos --------
 export const listProducts = () =>
   fetch(`${API_BASE}/productos`, { headers: { Accept: "application/json" } }).then(toJSON);
