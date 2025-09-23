@@ -1,6 +1,9 @@
 
 // frontend/src/servicios/api.js
-export const API_BASE = import.meta.env?.VITE_API_URL || "/api";
+const RAW = import.meta.env?.VITE_API_URL;
+export const API_BASE = RAW?.startsWith('http')
+  ? RAW
+  : 'https://tiendavr3-1.onrender.com/api';
 
 async function toJSON(res) {
   const txt = await res.text();
@@ -8,10 +11,6 @@ async function toJSON(res) {
   return txt ? JSON.parse(txt) : null;
 }
 
-const RAW = import.meta.env?.VITE_API_URL;
-export const API_BASE = RAW?.startsWith('http')
-  ? RAW
-  : 'https://tiendavr3-1.onrender.com/api';
 
 
 // -------- Productos --------
